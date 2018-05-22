@@ -15,6 +15,7 @@ class Album extends Component {
       currentSong: album.songs[0],
       currentTime: 0,
       duration: album.songs[0].duration,
+      volume: 0.5,
       isPlaying: false
     };
 
@@ -22,7 +23,7 @@ class Album extends Component {
     this.audioElement.src = album.songs[0].audioSrc;
   }
   
-  ComponentDidMount() {
+  componentDidMount() {
     this.eventListeners = {
       timeupdate: e => {
         this.setState({ currentTime: this.audioElement.currentTime });
@@ -35,7 +36,7 @@ class Album extends Component {
     this.audioElement.addEventListener('durationchange', this.eventListeners.durationchange);
   }
 
-  ComponentWillUnmount() {
+  componentWillUnmount() {
     this.audioElement.src = null;
     this.audioElement.removeEventListener('timeupdate', this.eventListeners.timeupdate);
     this.audioElement.removeEventListener('durationchange', this.eventListeners.durationchange);
@@ -89,6 +90,24 @@ class Album extends Component {
     this.setState({ currentTime: newTime });
   }
 
+  handleVolumeChange(e) {
+    this.audioElement.volume = e.target.value;
+    this.setState({ volume: e.target.value })
+  }
+
+  formatTime(timeInSec) {
+    const minutes = Math.floor(timeInSec / 60);
+    const seconds = Math.ceil(timeInSec % 60);
+    if (seconds < 10) {
+      return "0:0" + seconds;
+    }
+    if(isNaN(timeInSec)) {
+      return "-:--"
+    }
+    return (minutes+":"+seconds).toString();
+
+  }
+
   render() {
     return (
       <section className="album">
@@ -111,16 +130,15 @@ class Album extends Component {
             {          
               this.state.album.songs.map( (song, index) =>
                 <tr className="song" key={index} onClick={() => this.handleSongClick(song)}>
+                  <td className="song-number">{index+1}</td>
                   <td className="song-actions">
                     <button>
-                      <span className="song-number">{index+1}</span>
                       <span className="fas fa-play" ></span>
                       <span className="fas fa-pause"></span>
-                      <span className="fas fa-stop"></span>
                     </button>
                   </td>
                   <td className="song-title">{song.title}</td>
-                  <td className="song-duration">{song.duration}</td>
+                  <td className="song-duration">{this.formatTime(song.duration)}</td>
                 </tr>
               )
             }
@@ -129,12 +147,15 @@ class Album extends Component {
         <PlayerBar 
           isPlaying={this.state.isPlaying}
           currentSong={this.state.currentSong}
-          currentTime={() => this.audioElement.currentTime}
+          currentTime={this.audioElement.currentTime}
           duration={this.audioElement.duration}
+          volume={this.state.volume}
           handleSongClick={() => this.handleSongClick(this.state.currentSong)}
           handlePrevClick={() => this.handlePrevClick()}
           handleNextClick={() => this.handleNextClick()}
           handleTimeChange={(e) => this.handleTimeChange(e)}
+          handleVolumeChange={(e) => this.handleVolumeChange(e)}
+          formatTime={(timeInSec) => this.formatTime(timeInSec)}
         />
       </section>
     )
